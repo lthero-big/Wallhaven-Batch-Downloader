@@ -1,6 +1,6 @@
 '''
-作者 lthero
-网站 lthero.cn
+@author: lthero
+@personal web: lthero.cn
 '''
 import requests
 import threading
