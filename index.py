@@ -71,22 +71,6 @@ def download(url, name, file_path, flag):
         img = requests.get(url, headers=headers).content
         f.write(img)
 
-# def download( url, name, file_path, flag):
-#     s = requests.Session()
-#     s.mount('http://', HTTPAdapter(max_retries=3))
-#     s.mount('https://', HTTPAdapter(max_retries=3))
-#     try:
-#         r = s.get(url=url, headers={
-#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4389.90 Safari/531.36'},
-#                   timeout=5)
-#         fix_file_name = '%s/%s.jpg' % (file_path, name)
-#         if flag == 1:
-#             fix_file_name = '%s/%s.png' % (file_path, name)
-#         with open(fix_file_name, 'wb') as f:
-#             f.write(r.content)
-#     except requests.exceptions.RequestException as e:
-#         pass
-
 def open_url(url):
     list_ip = ['61.145.212.31', '59.124.224.180', '117.26.41.218', '183.6.183.35', '117.65.47.142']
     proxy = choice(list_ip)
