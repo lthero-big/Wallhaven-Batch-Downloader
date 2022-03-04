@@ -124,7 +124,7 @@ class Ui_Form(object):
         self.Page_input.setGeometry(QtCore.QRect(220, 66, 231, 31))
         self.Page_input.setText("")
         self.Page_input.setObjectName("Page_input")
-
+        
         # 单张下载url
         self.Label_page = QtWidgets.QLabel(Form)
         self.Label_page.setGeometry(QtCore.QRect(20, 66, 181, 31))
