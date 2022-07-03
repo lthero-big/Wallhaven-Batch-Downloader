@@ -1,6 +1,7 @@
 
 
 # 批量下载wallhaven壁纸
+此软件实现了：批量下载wallhaven壁纸，支持搜索结果下载，支持指定页面下载，支持按条件筛选后下载，多线程下载，速度很快
 
 
 推荐另一个项目，无需安装软件，在浏览器页面实现每张图片的快速下载：https://github.com/lthero-big/WallHaven-One-Click-Download
