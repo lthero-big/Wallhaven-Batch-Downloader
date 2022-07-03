@@ -3,6 +3,9 @@
 # 批量下载wallhaven壁纸
 
 
+推荐另一个项目，无需安装软件，在浏览器页面实现每张图片的快速下载：https://github.com/lthero-big/WallHaven-One-Click-Download
+
+
 
 ## 功能
 
