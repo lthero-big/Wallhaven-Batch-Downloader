@@ -40,6 +40,7 @@
 
 * 有界面的版本使用PYQT实现，名称为 index-withUI.py
 * 无需安装环境，win10、win11下可用
+* 打包程序可直接运行：蓝奏:https://wwa.lanzoui.com/b00uisw1a 密码:e5f2
 
 
 
