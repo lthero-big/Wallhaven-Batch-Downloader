@@ -1,82 +1,80 @@
+import os
 import sys
+import time
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
-from random import choice
 import threading
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from bs4 import BeautifulSoup
 
 headers = {
-'sec-fetch-dest': 'document',
-'sec-fetch-mode': 'navigate',
-'sec-fetch-site': 'same-origin',
-'sec-fetch-user': '?1',
-'upgrade-insecure-requests': '1',
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4389.90 Safari/531.36'
     ,
-    'Cookie': '_pk_id.1.01b8=77a4ffbc245ad3f3.1627430491.; _pk_ses.1.01b8=1; remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d=eyJpdiI6IldDOVJSOFM3RitkSWptVDk1VVVLNEE9PSIsInZhbHVlIjoiR3F4MElyU2w5ek1WaFRoWkN6VWRTSktxSWJGMFlJbTZObnBlV0xvV1o2XC96WGRyY1JoOUxUeFwvOTZ2a2VWNXNoRE5LdXd3SlFCd3E1Y2xRZEtUaitqeDcrNVordUxDUmJZZUFkU3NocDh3aHBrbGV4SHBWck1PeVMxY2FIWEV2YzVxMVwvclVmQmNYdW1SdmRyT294MjFRT2tlUngySkdzd0V5eWlmTTBBYXpcLzBaS0xJTTZhcUVGSk5XZEtsbEc3VCIsIm1hYyI6ImE5ZmEyNWY1ZTc2ODIyYjk0OWUwZmNmYjBiZjQ1YzA4NDVhMzc5YjY4NWEyMDEyOGMxYTVjZDJkYjFiODIyMzMifQ%3D%3D; XSRF-TOKEN=eyJpdiI6Ikw2ZnN1dlErT0dGOEpRaTRLdUN3WHc9PSIsInZhbHVlIjoiNzd4c2xJQzNiTkJ0VHp4K0QrUm4yNU56Y2xWN1F4SGRpRXYyR0NVcGpGOEFZTGRIVTFndzVZMndTdDloVmtIRSIsIm1hYyI6IjE1Yjc5N2E5ODdjZjBkMjQxM2Y5MGE5OTU5MGQxMzMyOTY0ZmVhNWE4YzVhMjc3OWU4Zjk3ZThkYmY2ZTA1NmYifQ%3D%3D; wallhaven_session=eyJpdiI6ImRLVHRvMXpYVURIN0FsT1pNZFlicWc9PSIsInZhbHVlIjoia0REOWFZODZLYjhCUW1ETjEwSk9vMCtHajVXM3BSemVFaHcrU0hoZHJEVVNsYm1FalRobkJZRkE1YkhVWldaRyIsIm1hYyI6ImMyM2NiNWNjZGFhMGMyNzU0ZTRkMDNhZDFlM2IwMmNhNzFhODM4Zjk2OGE2ZGRiZDUyZmMwZGIzNDM0YTA0OTEifQ%3D%3D'}
+    'Cookie': '_pk_id.1.01b8=ea68c6fef4de8841.1656407868.; remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d=eyJpdiI6IkdPWkphbmQ4Wm04XC9NM1pmVFwvNXdCdz09IiwidmFsdWUiOiJLMWVSbzVYVTlUbnNaNUtrMzlcL2g5Z1NDcFI1MHlyenVhT2ttakxrWnZiYWhWOGhlbGxBR1ZIUUp0RE1UdlJMK2VqTDNwM3c1YkxhV1NKWUw3Z3liMm1rdDBmczJlcVhrTjBkZ2c0MDU4dHZBc1AzdW5PZHRhUFZZXC8yQzYwVjM1Mmw5WVE2aWI3ZytcL3VUZWgyK3Q1OE1hOW16Y3QzYjZreUcwUXloZVZRK29wUlNYc3JvY0plUW01WTF2bk80cmMiLCJtYWMiOiJhZjE4YmUzNzRhZjFmMmEzZWJmNTkxMzNiMGI4OWYxYTk2MGQ3NzUyYzIyYzE5YzRkMDcwMWI2YjBmNmQ4M2Y0In0%3D; _pk_ses.1.01b8=1; XSRF-TOKEN=eyJpdiI6IkJrQWd2RVBqRVI0RVJHSTh6RjZrekE9PSIsInZhbHVlIjoiRTRsZWNvRW1tYTVIS2xmNWV1cWxicWQzVDBzMjIxYnZVdGFuRWhYbUtkRTdWWDVjVHhTd1R5OHdia2dpTWRZbCIsIm1hYyI6IjQ4NDc3ZmNkNWU5NGE5ZDlmOGNkY2UxZjkwOGYyYjYwMDIxMTgyZGMwY2RiMTg5ZDdlOGJlZmIwNGQ3YzAzNDgifQ%3D%3D; wallhaven_session=eyJpdiI6IkhFZGhmNjdpb1dtejJqMk9xWU1Udmc9PSIsInZhbHVlIjoibFljMUIybnlmVW41ZGhcL1dYNjVWbUtpXC9vQitmbG5Ka2NpS0ZKNmdNUkttUDdXOVI2YW5MOTBIYlRSTXhIVXVwIiwibWFjIjoiNDYzMWRhNjI4Yzg4MWMyMjkxN2NiZjk0NzBlNzg2OGVlMzhjOTRhYTBlMGE0YzhjOWVhYjYwOTdkYTg4Y2I3ZiJ9'}
+cent = 0
 
-class myThread(threading.Thread):
-    def __init__(self, page, num, file_name, form):
+class eachPageThread(threading.Thread):
+    def __init__(self, url, file_name, form):
         threading.Thread.__init__(self)
         self.form = form
-        self.page = page
-        self.num = num
+        self.eachPageUrl = url
         self.file_path = file_name
 
     def run(self):
         try:
-            start=int(self.page[-1])
-            url = [self.page]
-            if int(self.num) >= 2:
-                url.append(self.page)
-                for i in range(start, int(self.num) + 1):
-                    url.append(self.page[0:-1] + str(i))
-            collection = []
-            for x in url:
-                content = open_url(x)
-                soup = BeautifulSoup(content, 'lxml')
-                images = soup.find('section', class_="thumb-listing-page")
-                for li in images.find_all('li'):
-                    string = str(li.a['href'])
-                    collection.append(string)
-            cent = 0
-            threadings = []
-            for i in collection:
-                ui.set_down_nums('已经下载 ' + str(cent) + ' 张')
-                name = i.split('/')[-1]
-                each_url = 'https://w.wallhaven.cc/full/%s/wallhaven-%s.jpg' % (name[0:2], name)
-                html = requests.head(each_url)
+            eachPageCollection = []
+            content = open_url(self.eachPageUrl)
+            soup = BeautifulSoup(content, 'lxml')
+            images = soup.find('section', class_="thumb-listing-page")
+            for li in images.find_all('li'):
+                string = str(li.a['href'])
+                eachPageCollection.append(string)
+
+            threadingSet = []
+            for eachImage in eachPageCollection:
+                name = eachImage.split('/')[-1]
+                eachImageUrl = 'https://w.wallhaven.cc/full/%s/wallhaven-%s.jpg' % (name[0:2], name)
+                html = requests.head(eachImageUrl)
                 res = html.status_code
-                flag = 0
+                ImagePosixFlag = 0
                 if res == 404:
-                    each_url = each_url[0:-3] + 'png'
-                    flag = 1
-                t=threading.Thread(target=download, args=(each_url, name, self.file_path, flag))
-                cent += 1
-                threadings.append(t)
+                    eachImageUrl = eachImageUrl[0:-3] + 'png'
+                    ImagePosixFlag = 1
+
+                t = threading.Thread(target=downloadEachImage, args=(eachImageUrl, name, self.file_path, ImagePosixFlag))
+                threadingSet.append(t)
                 t.start()
-            for x in threadings:
-                x.join()
+
+                ui.set_down_nums('已经下载 ' + str(cent) + ' 张')
+
+            for eachThread in threadingSet:
+                eachThread.join()
         except:
             return
 
+    def get_enumerate(self):
+        return threading.enumerate()
 
-def download(url, name, file_path, flag):
+
+def downloadEachImage(url, name, file_path, flag):
+    global cent
     fix_file_name = '%s/%s.jpg' % (file_path, name)
     if flag == 1:
         fix_file_name = '%s/%s.png' % (file_path, name)
-    with open(fix_file_name, 'wb') as f:
-        img = requests.get(url, headers=headers).content
-        f.write(img)
+
+    if not os.path.exists(fix_file_name):
+        print("正在下载 %s" % fix_file_name)
+        with open(fix_file_name, 'wb') as f:
+            img = requests.get(url, headers=headers).content
+            f.write(img)
+        semalock.acquire()
+        cent += 1
+        semalock.release()
+    else:
+        print("发现%s存在，未下载" % fix_file_name)
+
 
 def open_url(url):
-    list_ip = ['61.145.212.31', '59.124.224.180', '117.26.41.218', '183.6.183.35', '117.65.47.142']
-    proxy = choice(list_ip)
-    proxies = {
-        "http": "http://{}".format(proxy), "https": "https://{}".format(proxy)
-    }
     response = requests.get(url, headers=headers)
     response.encoding = 'utf-8'
     html = response.text
@@ -88,17 +86,17 @@ class Ui_Form(object):
         Form.setObjectName("Form")
         Form.resize(794, 497)
         self.mesb = QMessageBox
-        #类型动漫。。
+        # 类型动漫。。
         self.mark = [1, 1, 0]
-        #SFW
-        self.mark_2=[1,1,0]
+        # SFW
+        self.mark_2 = [1, 1, 0]
         self.file = ''
 
-        #date_added按时间
-        self.sorting='toplist'
-        self.topRange='1M'
+        # date_added按时间
+        self.sorting = 'toplist'
+        self.topRange = '1M'
         self.categories = '110'
-        self.purity='110'
+        self.purity = '110'
         font = QtGui.QFont()
         font.setPointSize(12)
         self.Button_start = QtWidgets.QPushButton(Form)
@@ -106,7 +104,6 @@ class Ui_Form(object):
         self.Button_start.setFont(font)
         self.Button_start.setObjectName("Button_start")
         self.Button_start.clicked.connect(lambda: self.start(Form))
-
 
         self.Button_choose_file = QtWidgets.QPushButton(Form)
         self.Button_choose_file.setGeometry(QtCore.QRect(320, 240, 121, 61))
@@ -124,7 +121,7 @@ class Ui_Form(object):
         self.Page_input.setGeometry(QtCore.QRect(220, 66, 231, 31))
         self.Page_input.setText("")
         self.Page_input.setObjectName("Page_input")
-        
+
         # 单张下载url
         self.Label_page = QtWidgets.QLabel(Form)
         self.Label_page.setGeometry(QtCore.QRect(20, 66, 181, 31))
@@ -142,20 +139,21 @@ class Ui_Form(object):
         self.spinBox_nums_common = QtWidgets.QSpinBox(Form)
         self.spinBox_nums_common.setGeometry(QtCore.QRect(220, 130, 61, 31))
         self.spinBox_nums_common.setMinimum(1)
-        self.spinBox_nums_common.setMaximum(20)
+        self.spinBox_nums_common.setMaximum(500)
         self.spinBox_nums_common.setObjectName("spinBox_nums_rmf")
-
-        self.spinBox_nums_end = QtWidgets.QSpinBox(Form)
-        self.spinBox_nums_end.setGeometry(QtCore.QRect(450, 430, 61, 31))
-        self.spinBox_nums_end.setMinimum(1)
-        self.spinBox_nums_end.setMaximum(20)
-        self.spinBox_nums_end.setObjectName("spinBox_nums_end")
 
         self.spinBox_start_num = QtWidgets.QSpinBox(Form)
         self.spinBox_start_num.setGeometry(QtCore.QRect(280, 430, 61, 31))
         self.spinBox_start_num.setMinimum(1)
-        self.spinBox_start_num.setMaximum(20)
+        self.spinBox_start_num.setMaximum(500)
         self.spinBox_start_num.setObjectName("spinBox_start_num")
+
+        self.spinBox_nums_end = QtWidgets.QSpinBox(Form)
+        self.spinBox_nums_end.setGeometry(QtCore.QRect(450, 430, 61, 31))
+        self.spinBox_nums_end.setMinimum(1)
+        self.spinBox_nums_end.setMaximum(500)
+        self.spinBox_nums_end.setObjectName("spinBox_nums_end")
+
 
         self.label_start_num = QtWidgets.QLabel(Form)
         self.label_start_num.setGeometry(QtCore.QRect(200, 440, 72, 15))
@@ -208,7 +206,7 @@ class Ui_Form(object):
         self.checkBox_people.setObjectName("checkBox_People")
         self.checkBox_people.stateChanged.connect(lambda: self.update_categories(self.checkBox_people))
 
-        #==========SFW  Sketchy   NSFW  ==============
+        # ==========SFW  Sketchy   NSFW  ==============
 
         self.checkBox_SFW = QtWidgets.QCheckBox(Form)
         self.checkBox_SFW.setGeometry(QtCore.QRect(20, 380, 51, 31))
@@ -275,8 +273,9 @@ class Ui_Form(object):
         self.comboBox_condition.setItemText(1, _translate("Form", "收藏榜单"))
         self.comboBox_condition.setItemText(2, _translate("Form", "评论榜单"))
         self.comboBox_condition.setItemText(3, _translate("Form", "Hot榜单NSFW"))
-        self.comboBox_condition.setItemText(4,_translate("Form", "随机下载"))
-        self.comboBox_condition.currentIndexChanged.connect(lambda :self.updata_sorting())
+        self.comboBox_condition.setItemText(4, _translate("Form", "随机下载"))
+        self.comboBox_condition.currentIndexChanged.connect(lambda: self.updata_sorting())
+
 
         self.checkBox_Sketchy.setText(_translate("Form", "Sketchy"))
         self.checkBox_SFW.setText(_translate("Form", "SFW"))
@@ -285,41 +284,77 @@ class Ui_Form(object):
         self.checkBox_general.setText(_translate("Form", "常规"))
         self.checkBox_anime.setText(_translate("Form", "动漫"))
         self.checkBox_people.setText(_translate("Form", "真人"))
-        #self.label.setText(_translate("Form", "输入指定网站可以从指定页面向后按 ！开始！ 下载，不输入指定网站按 ！开始条件下载 ！ \n\t\t\t 一次下载大约23张 \n\t\t 若长时间不下载，可以重新点击开始尝试"))
+        # self.label.setText(_translate("Form", "输入指定网站可以从指定页面向后按 ！开始！ 下载，不输入指定网站按 ！开始条件下载 ！ \n\t\t\t 一次下载大约23张 \n\t\t 若长时间不下载，可以重新点击开始尝试"))
+
+    def updateEndSpinBoxNum(self):
+        self.spinBox_nums_end.setMaximum(int(self.spinBox_start_num.text()) + 19)
 
     def get_filename(self, form):
         self.file = QFileDialog.getExistingDirectory(form, "选择文件夹", ".")
         if self.file != '':
-            self.mesb.about(form, '提示', '选择成功  ' + self.file)
+            self.mesb.about(form, '对不起！', '选择成功  ' + self.file)
         else:
-            self.mesb.about(form, '提示', '选择失败  ')
+            self.mesb.about(form, '对不起！', '选择失败  ')
+
+    def testIsFinish(self,theThread,form):
+        while True:
+            if len(theThread[0].get_enumerate()) == 2:
+                break
+            # print('当前运行线程：', len(theThread[0].get_enumerate()))
+            time.sleep(1)
+        print("全部下载完成")
+        ui.Button_condition_start.setEnabled(True)
+        ui.Button_start.setEnabled(True)
+        ui.Button_choose_file.setEnabled(True)
 
     def thread_it(self, func, *args):
         t = threading.Thread(target=func, args=args)
         t.setDaemon(True)
         t.start()
 
-    def down_load(self, url,num, file_path, form):
-        ui.mesb.about(form, '提示', '开始下载 稍等片刻~~~')
-        thread1 = myThread(url,num, file_path, form)
-        thread1.start()
+    def downLoad(self,url,num,file_path,form):
+        start = int(url[-1])
+        allPagesUrl = [url]
+        if int(num) >= 2:
+            for i in range(start + 1, int(num) + start):
+                allPagesUrl.append(url[0:-1] + str(i))
 
-    # def fix_time(self):
-    #     'https://wallhaven.cc/'+'search?categories=111&purity=110&topRange=1y&sorting=toplist&order=desc'
+        eachPageThreadSet=[]
+        for eachPageUrl in allPagesUrl:
+            t = eachPageThread(eachPageUrl, file_path, form)
+            eachPageThreadSet.append(t)
+            t.setDaemon(True)
+            t.start()
+
+        # 守望线程，判断是否全部下载完成
+        args = [eachPageThreadSet, form]
+        t2 = threading.Thread(target=self.testIsFinish, args=args)
+        t2.setDaemon(True)
+        t2.start()
+
+        ui.Button_condition_start.setEnabled(False)
+        ui.Button_start.setEnabled(False)
+        ui.Button_choose_file.setEnabled(False)
+
+        ui.mesb.about(form, '对不起！', '开始下载 稍等片刻~~~')
+
+
 
     def start(self, form):
         if self.file != '':
-            if self.Page_input.text()!='':
+            if self.Page_input.text() != '':
                 try:
-                    self.down_load(self.Page_input.text(), self.spinBox_nums_common.text(), self.file, form)
+                    global cent
+                    cent -= cent
+                    self.downLoad(self.Page_input.text(), self.spinBox_nums_common.text(), self.file, form)
                 except():
-                    self.mesb.about(form, '提示', '出错,重启后再下载')
+                    self.mesb.about(form, '对不起！', '出错,重启后再下载')
             else:
-                self.mesb.about(form, '提示', '先输入指定页面再开始')
+                self.mesb.about(form, '对不起！', '先输入指定页面再开始')
         else:
-            self.mesb.about(form, '提示', '先选择路径')
+            self.mesb.about(form, '对不起！', '先选择路径')
 
-    def update_categories(self,check_box):
+    def update_categories(self, check_box):
         name = check_box.objectName()
         if check_box.isChecked():
             if name == 'checkBox_General':
@@ -360,17 +395,17 @@ class Ui_Form(object):
             self.purity = self.purity + str(i)
 
     def update_topRange(self):
-        choice_time=self.comboBox_time.currentText()
-        if choice_time=='近一个月的':
-            self.topRange='1M'
-        elif choice_time=='最新的':
-            self.topRange='1d'
-        elif choice_time=='近三个月的':
-            self.topRange='3M'
-        elif choice_time=='近六个月的':
-            self.topRange='6M'
+        choice_time = self.comboBox_time.currentText()
+        if choice_time == '近一个月的':
+            self.topRange = '1M'
+        elif choice_time == '最新的':
+            self.topRange = '1d'
+        elif choice_time == '近三个月的':
+            self.topRange = '3M'
+        elif choice_time == '近六个月的':
+            self.topRange = '6M'
         else:
-            self.topRange='1y'
+            self.topRange = '1y'
 
     def updata_sorting(self):
         choice_time = self.comboBox_condition.currentText()
@@ -385,23 +420,30 @@ class Ui_Form(object):
         else:
             self.sorting = 'random'
 
-
     def condition_down(self, form):
         if self.file != '':
             try:
-                fixed_url = 'https://wallhaven.cc/' + 'search?categories=' + self.categories + '&purity=' +self.purity+ '&topRange=' + \
-                            self.topRange + '&sorting='+self.sorting+'&order=desc'+'&page='+self.spinBox_start_num.text()#+self.purity
-                if int(self.spinBox_nums_end.text())-int(self.spinBox_start_num.text())<0:
-                    num=1
+                global cent
+                cent -= cent
+                fixed_url = 'https://wallhaven.cc/' + 'search?categories=' + self.categories + '&purity=' + self.purity + '&topRange=' + \
+                            self.topRange + '&sorting=' + self.sorting + '&order=desc' + '&page=' + self.spinBox_start_num.text()  # +self.purity
+                if int(self.spinBox_nums_end.text()) - int(self.spinBox_start_num.text()) < 0:
+                    num = 1
                 else:
-                    num=int(self.spinBox_nums_end.text())-int(self.spinBox_start_num.text())+1
-                self.down_load(fixed_url, num, self.file, form)
+                    num = int(self.spinBox_nums_end.text()) - int(self.spinBox_start_num.text()) + 1
+                if num>20:
+                    self.mesb.about(form, '对不起！', '一次性最多下载20页，过多容易导致程序异常')
+                else:
+                    self.downLoad(fixed_url,num,self.file,form)
             except():
-                self.mesb.about(form, '提示', '出错,重启后再下载')
+                self.mesb.about(form, '对不起！', '出错,重启后再下载')
         else:
-            self.mesb.about(form, '提示', '先选择路径')
+            self.mesb.about(form, '对不起！', '先选择路径')
+
 
 if __name__ == '__main__':
+    lock = threading.Lock()
+    semalock=threading.Semaphore(1)
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_Form()
